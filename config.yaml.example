@@ -1,0 +1,29 @@
+# Memory Bridge 配置文件示例
+# 复制此文件为 config.yaml 并填入你的配置
+
+openmemory:
+  endpoint: "http://your-server:8888"
+  api_key: ""  # 填入你的 API key
+  user_id: "your-user-id"
+
+hooks:
+  on_session_start: true
+  on_stop: true
+  on_prompt_submit: false
+
+sync:
+  enabled: true
+  interval_hours: 6
+  sources:
+    claude_code: "~/.claude/projects/*/memory/"
+    codex: "~/.codex/memories/"
+    gemini: "~/.gemini/GEMINI.md"
+
+clients:
+  - claude-code
+  - qoder
+  - codebuddy
+  - cursor
+  - codex
+  - windsurf
+  - gemini

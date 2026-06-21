@@ -1,0 +1,28 @@
+{
+  "client": "cursor",
+  "description": "Cursor hooks 配置模板",
+  "status": "stable",
+  "config_path": "~/.cursor/hooks.json",
+  "notes": "独立文件，扁平化格式，事件名用小驼峰",
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "pwsh -NoProfile -File \"INSTALL_DIR/scripts/hooks/recall.ps1\" \"CONFIG_PATH\"",
+        "timeout": 10
+      }
+    ],
+    "stop": [
+      {
+        "command": "pwsh -NoProfile -File \"INSTALL_DIR/scripts/hooks/save.ps1\" \"CONFIG_PATH\"",
+        "timeout": 15
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "pwsh -NoProfile -File \"INSTALL_DIR/scripts/hooks/remind.ps1\" \"CONFIG_PATH\"",
+        "timeout": 5
+      }
+    ]
+  }
+}

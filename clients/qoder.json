@@ -1,0 +1,31 @@
+{
+  "client": "qoder",
+  "description": "Qoder hooks 配置模板",
+  "status": "stable",
+  "config_path": "~/.qoder/settings.json",
+  "notes": "没有 SessionStart，用 UserPromptSubmit 代替 recall",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -File \"INSTALL_DIR/scripts/hooks/save.ps1\" \"CONFIG_PATH\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -File \"INSTALL_DIR/scripts/hooks/recall.ps1\" \"CONFIG_PATH\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

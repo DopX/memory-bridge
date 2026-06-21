@@ -1,0 +1,21 @@
+{
+  "client": "windsurf",
+  "description": "Windsurf hooks 配置模板",
+  "status": "stable",
+  "config_path": "C:\\Users\\Lxx\\.codeium\\windsurf\\hooks.json",
+  "notes": "完全不同的格式和事件名，支持 powershell 字段",
+  "hooks": {
+    "pre_user_prompt": [
+      {
+        "powershell": "pwsh -NoProfile -File \"INSTALL_DIR/scripts/hooks/recall.ps1\" \"CONFIG_PATH\"",
+        "timeout": 10
+      }
+    ],
+    "post_cascade_response_with_transcript": [
+      {
+        "powershell": "pwsh -NoProfile -File \"INSTALL_DIR/scripts/hooks/save.ps1\" \"CONFIG_PATH\"",
+        "timeout": 15
+      }
+    ]
+  }
+}
