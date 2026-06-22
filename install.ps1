@@ -45,11 +45,93 @@ if (-not (Test-Path $Config)) {
     exit 1
 }
 
+# YAML 解析函数（手动解析，避免依赖 powershell-yaml 模块）
+function Parse-YamlConfig {
+    param([string]$YamlContent)
+
+    $result = @{}
+    $result.openmemory = @{}
+    $result.hooks = @{}
+    $result.sync = @{}
+    $result.clients = @()
+
+    $lines = $YamlContent -split "`n"
+    $currentSection = ""
+    $inClients = $false
+
+    foreach ($line in $lines) {
+        # 跳过注释和空行
+        $trimmed = $line.Trim()
+        if ($trimmed -match "^#" -or $trimmed -eq "") {
+            continue
+        }
+
+        # 检测顶级 section
+        if ($line -match "^openmemory:") {
+            $currentSection = "openmemory"
+            $inClients = $false
+            continue
+        }
+        elseif ($line -match "^hooks:") {
+            $currentSection = "hooks"
+            $inClients = $false
+            continue
+        }
+        elseif ($line -match "^sync:") {
+            $currentSection = "sync"
+            $inClients = $false
+            continue
+        }
+        elseif ($line -match "^clients:") {
+            $currentSection = "clients"
+            $inClients = $true
+            continue
+        }
+
+        # 解析 clients 列表
+        if ($inClients -and $trimmed -match "^-\s+(.+)$") {
+            $client = $Matches[1].Trim()
+            $result.clients += $client
+            continue
+        }
+
+        # 解析 key-value 对（移除行内注释）
+        if ($trimmed -match "^([^:]+):\s*(.*?)\s*(#.*)?$") {
+            $key = $Matches[1].Trim()
+            $value = $Matches[2].Trim()
+
+            # 移除引号
+            if ($value -match "^`"(.*)`"$") {
+                $value = $Matches[1]
+            }
+
+            # 转换布尔值
+            if ($value -eq "true") { $value = $true }
+            elseif ($value -eq "false") { $value = $false }
+
+            # 转换数字
+            if ($value -match "^\d+$") {
+                $value = [int]$value
+            }
+
+            # 存储到对应 section
+            switch ($currentSection) {
+                "openmemory" { $result.openmemory[$key] = $value }
+                "hooks" { $result.hooks[$key] = $value }
+                "sync" { $result.sync[$key] = $value }
+            }
+        }
+    }
+
+    return $result
+}
+
 # 读取配置
 Write-Host "读取配置: $Config"
-$config = Get-Content $Config -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction SilentlyContinue
-if (-not $config) {
-    Write-Error "配置文件格式无效"
+$yamlContent = Get-Content $Config -Raw -Encoding UTF8
+$parsedConfig = Parse-YamlConfig -YamlContent $yamlContent
+if (-not $parsedConfig -or $parsedConfig.clients.Count -eq 0) {
+    Write-Error "配置文件格式无效或 clients 列表为空"
     exit 1
 }
 
@@ -58,6 +140,7 @@ $ClientPaths = @{
     "claude-code" = Join-Path $env:USERPROFILE ".claude\settings.json"
     "qoder" = Join-Path $env:USERPROFILE ".qoder\settings.json"
     "codebuddy" = Join-Path $env:USERPROFILE ".codebuddy\settings.json"
+    "workbuddy" = Join-Path $env:USERPROFILE ".workbuddy\settings.json"
     "cursor" = Join-Path $env:USERPROFILE ".cursor\hooks.json"
     "codex" = Join-Path $env:USERPROFILE ".codex\hooks.json"
     "windsurf" = Join-Path $env:USERPROFILE ".codeium\windsurf\hooks.json"
@@ -203,7 +286,7 @@ function Register-SyncTask {
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
 
     # 创建新任务
-    $action = New-ScheduledTaskAction -Execute "pwsh.exe" -Argument "-NoProfile -File `"$scriptPath`" `"$Config`""
+    $action = New-ScheduledTaskAction -Execute "pwsh.exe" -Argument "-NoProfile -File "`"$scriptPath" "`"$Config""
     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Hours $IntervalHours)
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd
 
@@ -216,7 +299,7 @@ function Register-SyncTask {
 if ($Uninstall) {
     Write-Host "=== Memory Bridge 卸载 ==="
 
-    foreach ($client in $config.clients) {
+    foreach ($client in $parsedConfig.clients) {
         $configPath = $ClientPaths[$client]
         if ($configPath) {
             Uninstall-Client -ClientName $client -ConfigPath $configPath
@@ -233,15 +316,15 @@ else {
     Write-Host "=== Memory Bridge 安装 ==="
 
     # 验证 OpenMemory
-    if ($config.openmemory.endpoint) {
-        $null = Test-OpenMemory -Endpoint $config.openmemory.endpoint
+    if ($parsedConfig.openmemory.endpoint) {
+        $null = Test-OpenMemory -Endpoint $parsedConfig.openmemory.endpoint
     }
 
     # 安装各客户端
     $installed = @()
     $skipped = @()
 
-    foreach ($client in $config.clients) {
+    foreach ($client in $parsedConfig.clients) {
         $configPath = $ClientPaths[$client]
 
         if (-not $configPath) {
@@ -255,8 +338,8 @@ else {
     }
 
     # 创建定时任务
-    if ($config.sync.enabled) {
-        Register-SyncTask -IntervalHours $config.sync.interval_hours
+    if ($parsedConfig.sync.enabled) {
+        Register-SyncTask -IntervalHours $parsedConfig.sync.interval_hours
     }
 
     # 输出报告
@@ -272,3 +355,5 @@ else {
     Write-Host ""
     Write-Host "安装完成！"
 }
+
+

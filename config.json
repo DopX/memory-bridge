@@ -1,0 +1,32 @@
+{
+  "openmemory": {
+    "endpoint": "http://100.100.188.61:8765",
+    "api_key": "",
+    "user_id": "lxx",
+    "api_prefix": "/api/v1"
+  },
+  "hooks": {
+    "on_session_start": true,
+    "on_stop": true,
+    "on_prompt_submit": false
+  },
+  "sync": {
+    "enabled": true,
+    "interval_hours": 6,
+    "sources": {
+      "claude_code": "~/.claude/projects/*/memory/",
+      "codex": "~/.codex/memories/",
+      "gemini": "~/.gemini/GEMINI.md"
+    }
+  },
+  "clients": [
+    "claude-code",
+    "qoder",
+    "codebuddy",
+    "cursor",
+    "codex",
+    "windsurf",
+    "gemini",
+    "workbuddy"
+  ]
+}

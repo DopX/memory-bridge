@@ -1,0 +1,43 @@
+{
+  "client": "workbuddy",
+  "description": "WorkBuddy hooks configuration template",
+  "status": "stable",
+  "config_path": "~/.workbuddy/settings.json",
+  "notes": "Compatible with CodeBuddy hook format, uses Python for Git Bash compatibility",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"INSTALL_DIR/scripts/hooks/recall.py\" \"CONFIG_PATH\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"INSTALL_DIR/scripts/hooks/save.py\" \"CONFIG_PATH\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"INSTALL_DIR/scripts/hooks/remind.py\" \"CONFIG_PATH\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
